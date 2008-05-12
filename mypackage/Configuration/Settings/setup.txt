@@ -1,0 +1,18 @@
+plugin.F3_MyPackage.settings {
+	# Here you can add settings of our Package
+	myproperty = mypropertyvalue
+}
+
+plugin.F3_MyPackage.sources {
+	addresses {
+		sourceName = tt_address
+		sourceType = sql		
+	}
+}
+
+
+includeLibs.F3_MyPackage = EXT:mypackage/Classes/Controller/tx_MyPackage_Dispatcher.php
+plugin.F3_MyPackage_MyFirstPlugin = USER
+plugin.F3_MyPackage_MyFirstPlugin.userFunc = tx_MyPackage_Dispatcher->main
+tt_content.list.20.mypackage < plugin.F3_MyPackage_MyFirstPlugin
+tt_content.list.20.mypackage.controller = F3_MyPackage_Controller_Default

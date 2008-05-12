@@ -13,18 +13,19 @@
  *                                                                        */
 
 /**
- * Components of the extension 'gimmefive'
+ * Component Manager of the extension 'gimmefive'. This is a backport of the Component Manager of FLOW3. It's based
+ * on code mainly written by Robert Lemke. Thanx to the FLOW3 team for all the great stuff!
  *
- * @author	Jochen Rau <jochen.rau@typoplanet.de>
  * @package	TYPO3
- * @subpackage	Gimmefive
+ * @subpackage	F3_GimmeFive
  */
-class F3_Gimmefive_Components {
+class F3_GimmeFive_Component_Manager {
 	const PACKAGE_PREFIX = 'F3';
-	const THIS_PACKAGE_KEY = 'gimmefive';
+	const THIS_PACKAGE_KEY = 'GimmeFive';
 	const DIRECTORY_CLASSES = 'Classes/';
-	const DIRECTORY_LANGUAGES = 'Resources/Languages';
-	const DIRECTORY_TEMPLATES = 'Resources/Templates';
+	const DIRECTORY_CONFIGURATION = 'Configuration/';
+	const DIRECTORY_LANGUAGES = 'Resources/Language/';
+	const DIRECTORY_TEMPLATES = 'Resources/Template/';
 	const SCOPE_PROTOTYPE = 'prototype';
 	const SCOPE_SINGLETON = 'singleton';
 
@@ -39,7 +40,7 @@ class F3_Gimmefive_Components {
 		
 	public static function getInstance() {
         if (self::$instance === NULL) {
-            self::$instance = new F3_Gimmefive_Components();
+            self::$instance = new F3_GimmeFive_Component_Manager();
         }
         return self::$instance;
     }
@@ -64,8 +65,6 @@ class F3_Gimmefive_Components {
 		} else {
 			$arguments =  array_slice(func_get_args(), 1, NULL, TRUE); // array keys are preserved (TRUE) -> argument array starts with key=1 
 			$componentObject = $this->createComponentObject($componentName, $arguments);
-			// DEMO
-			// var_dump($componentName);
 		}
 		return $componentObject;
 	}
@@ -74,13 +73,13 @@ class F3_Gimmefive_Components {
 	 * Requires a class file and instanciates a class.
 	 *
 	 * @param string $componentName 
-	 * @param string $componentConfiguration 
-	 * @return void
+	 * @param array	$overridingConstructorArguments
+	 * @return object
 	 * @author Robert Lemke <robert@typo3.org>
 	 * @author adapted for TYPO3v4 by Jochen Rau <jochen.rau@typoplanet.de>
 	 */
 	protected function createComponentObject($componentName, array $overridingConstructorArguments) {
-		$componentConfiguration = $this->getComponentConfiguration($componentName);
+		$componentConfiguration = $this->getComponentConfiguration($componentName);		
 		$className = $componentConfiguration['className'] ? $componentConfiguration['className'] : $componentName;
 		if (!class_exists($className, TRUE)) throw new Exception('No valid implementation class for component "' . $componentName . '" found while building the component object (Class "' . $className . '" does not exist).');
 
@@ -104,11 +103,16 @@ class F3_Gimmefive_Components {
 			$errorMessage = error_get_last();
 			throw new Exception('A parse error ocurred while trying to build a new object of type ' . $className . ' (' . $errorMessage['message'] . '). The evaluated PHP code was: ' . $instruction);
 		}
-
-		if (!isset($componentConfiguration['scope']) || $componentConfiguration['scope'] === self::SCOPE_SINGLETON) {
-			$this->cacheComponent($componentName, $componentObject, $componentConfiguration);
+		$scope = $this->getComponentScope($componentName, $componentConfiguration);
+		switch ($scope) {
+			case 'singleton' :
+				$this->putComponentObject($componentName, $componentObject);
+				break;
+			case 'prototype' :
+				break;
+			default :
+				throw new Exception('Support for scope "' . $scope .'" has not been implemented (yet)', 1167484148);
 		}
-		
 		return $componentObject;
 	}
 	
@@ -190,7 +194,7 @@ class F3_Gimmefive_Components {
 	 * Returns the component configuration from cache or fetches it from scratch. 
 	 *
 	 * @param string $componentName 
-	 * @return void
+	 * @return F3_Contentparser_Configuration
 	 */
 	protected function getComponentConfiguration($componentName) {
 		$componentNameParts = explode('_', $componentName,3);
@@ -210,10 +214,9 @@ class F3_Gimmefive_Components {
 	 *
 	 * @param string $componentName 
 	 * @param string $componentObject 
-	 * @param string $componentConfiguration 
 	 * @return void
 	 */
-	protected function cacheComponent($componentName, $componentObject) {
+	protected function putComponentObject($componentName, $componentObject) {
 		 if (is_object($componentObject)) {
 		 	$this->componentObjects[$componentName] = $componentObject;
 		 }
@@ -242,10 +245,28 @@ class F3_Gimmefive_Components {
 	}
 	
 	/**
+	 * Returns the scope of the specified component. If it is not defined in the component
+	 * configuration, the scope is 'singleton'.
+	 *
+	 * @param string $componentName: Name of the component
+	 * @param F3_FLOW3_Component_Configuration $componentConfiguration: The component configuration
+	 * @return string The scope
+	 * @author Robert Lemke <robert@typo3.org>
+	 * @author adapted for TYPO3v4 by Jochen Rau <jochen.rau@typoplanet.de>
+	 */
+	protected function getComponentScope($componentName, $componentConfiguration) {
+		$scope = !is_null($componentConfiguration['scope']) ? $componentConfiguration['scope'] : 'singleton';		
+		return $scope;
+	}
+	
+	/**
 	 * Builds and returns an array of class names => file names of all
 	 * tx_*.php files in the extension's Classes directory and its sub-
 	 * directories.
 	 *
+	 * @param string $packageKey
+	 * @param string $subDirectory: for recursion 
+	 * @param int $recursionLevel: maximum depth of recursion
 	 * @return array
 	 * @author Robert Lemke <robert@typo3.org>
 	 * @author adapted for TYPO3v4 by Jochen Rau <jochen.rau@typoplanet.de>
