@@ -61,11 +61,17 @@ class F3_MyPackage_Repository {
 		if (!isset($sourcesConfiguration)) throw new Exception('No sources configuration was found.');
 		foreach ($sourcesConfiguration as $sourceKey => $sourceSetup) {
 			$sourceSetup = array_merge(array('sourceKey' => substr($sourceKey, 0, -1)), $sourceSetup);
-			if ($sourceSetup['sourceType'] === 'sql') {
+			if ($sourceSetup['sourceType'] === 'sql' && $this->sourceExists($sourceSetup)) {
 				$sources[] = $this->componentManager->getComponent('F3_MyPackage_Source_SQL', $sourceSetup);
 			}
 		}
 		return $sources;
 	}
+	
+	protected function sourceExists($sourceSetup) {
+		global $TCA;
+		return array_key_exists($sourceSetup['sourceName'], $TCA) ? TRUE : FALSE;
+	}
+	
 }	
 ?>
