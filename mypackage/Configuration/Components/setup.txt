@@ -1,9 +1,0 @@
-# encoding: utf-8
-plugin.F3_MyPackage.components {
-	F3_MyPackage_Content {
-		scope = prototype
-	}
-	F3_MyPackage_Person {
-		scope = prototype
-	}
-}
