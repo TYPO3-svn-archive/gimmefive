@@ -43,6 +43,27 @@ class F3_GimmeFive_Configuration_Container extends F3_FLOW3_Configuration_Contai
 		}
 		return $this;
 	}
+	
+	/**
+	 * Returns the this container as a TypoScript array (with the dot "." as a suffix for keys)
+	 *
+	 * @param mixed $options A plain value or a F3_FLOW3_Configuration_Container 
+	 * @return array The TypoScript array
+	 * @author JochenRau <jochen.rau@typoplanet.de>
+	 */
+	public function toTypoScriptArray($options = NULL) {
+		$options = $options === NULL ? $this : $options;
+		foreach ($options as $optionName => $optionValue) {
+			if ($optionValue instanceof F3_GimmeFive_Configuration_Container) {
+				$optionName = $optionName . '.';
+				$newOptionValue = $this->toTypoScriptArray($optionValue);
+			} else {
+				$newOptionValue = $optionValue;
+			}
+			$array[$optionName] = $newOptionValue;
+		}
+		return $array;
+	}
 
 }
 ?>

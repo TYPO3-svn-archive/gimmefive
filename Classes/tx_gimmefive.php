@@ -27,9 +27,7 @@ require_once(FLOW3_PATH_FLOW3 . 'Package/F3_FLOW3_Package_Package.php');
  * @package FLOW3
  * @license http://opensource.org/licenses/gpl-license.php GNU Public License, version 2
  */
-
 final class tx_gimmefive {
-	
 
 	/**
 	 * The version of the FLOW3 framework
@@ -47,35 +45,38 @@ final class tx_gimmefive {
 	const INITIALIZATION_LEVEL_FLOW3 = 3;
 	const INITIALIZATION_LEVEL_PACKAGES = 4;
 	const INITIALIZATION_LEVEL_COMPONENTS = 5;
-	const INITIALIZATION_LEVEL_SETTINGS = 6;
-	const INITIALIZATION_LEVEL_RESOURCES = 7;
+	const INITIALIZATION_LEVEL_RESOURCES = 6;
 	const INITIALIZATION_LEVEL_READY = 10;
 
 	/**
-	 * @var string The application context
+	 * The application context
+	 * @var string
 	 */
 	protected $context;
 
 	/**
-	 * @var F3_FLOW3_Component_ManagerInterface An instance of the component manager
+	 * An instance of the component manager
+	 * @var F3_FLOW3_Component_ManagerInterface
 	 */
 	protected $componentManager;
 
 	/**
-	 * @var F3_FLOW3_Resource_ClassLoader Instance of the class loader
+	 * Instance of the class loader
+	 * @var F3_FLOW3_Resource_ClassLoader
 	 */
 	protected $classLoader;
 
 	/**
-	 * @var integer Flag which states up to which level FLOW3 has been initialized
+	 * Flag which states up to which level FLOW3 has been initialized
+	 * @var integer
 	 */
 	protected $initializationLevel;
 
 	/**
-	 * @var array Array of class names which must not be registered as components automatically. Class names may also be regular expressions.
+	 * Array of class names which must not be registered as components automatically. Class names may also be regular expressions.
+	 * @var array
 	 */
 	protected $componentRegistrationClassBlacklist = array(
-		'F3_FLOW3',
 		'F3_FLOW3_AOP_.*',
 		'F3_FLOW3_Component.*',
 		'F3_FLOW3_Package.*',
@@ -83,7 +84,8 @@ final class tx_gimmefive {
 	);
 
 	/**
-	 * @var F3_FLOW3_Configuration_Container The FLOW3 base configuration  (for this class)
+	 * The FLOW3 base configuration  (for this class)
+	 * @var F3_FLOW3_Configuration_Container
 	 */
 	protected $configuration;
 
@@ -99,31 +101,37 @@ final class tx_gimmefive {
 		$this->context = $context;
 		$this->initializationLevel = self::INITIALIZATION_LEVEL_CONSTRUCT;
 	}
-	
+
 	public function main($input, $setup) {
 		// return 'Hello World!' . $input;
+		if (isset($setup['context'])) $this->context = $setup['context'];
+		
 		if ($this->initializationLevel == self::INITIALIZATION_LEVEL_CONSTRUCT) $this->initialize();
-		if ($this->initializationLevel < self::INITIALIZATION_LEVEL_SETTINGS) throw new F3_FLOW3_Exception('Cannot run FLOW3 because it is not fully initialized (current initialization level: ' . $this->initializationLevel . ').', 1205759259);
+		if ($this->initializationLevel < self::INITIALIZATION_LEVEL_RESOURCES) throw new F3_FLOW3_Exception('Cannot run FLOW3 because it is not fully initialized (current initialization level: ' . $this->initializationLevel . ').', 1205759259);
+
 
 		if (!isset($setup['controller'])) throw new F3_FLOW3_Exception('No controller given. Please configure one.', 1211788758);
 		if (!$this->componentManager->isComponentRegistered($setup['controller'])) throw new Exception('Invalid controller "' . $setup['controller'] . '". The controller "' . $setup['controller'] . '" is not a registered component.', 1202921618);
 		$controller = $this->componentManager->getComponent($setup['controller']);		
 
 		$content = $input;
+		// TODO
 		// $content = $this->componentManager->getComponent('F3_TYPO3_Domain_Content');
 		// $content->setContent($input);
 		
-		$configurationManager = new F3_GimmeFive_Configuration_Manager($this->context);
 		$explodedControllerName = explode('_', $setup['controller']);
 		$packageKey = $explodedControllerName[1];
+		$configurationManager = new F3_GimmeFive_Configuration_Manager($this->context);
 		$settings = $configurationManager->getConfiguration($packageKey, 'Settings', $setup); 
 		
-		$request = $this->componentManager->getComponent('F3_FLOW3_MVC_Request');
+		$request = $this->componentManager->getComponent('F3_FLOW3_MVC_Web_Request');
 		$request->setArgument('content', $content);
 		$request->setArgument('settings', $settings);
+		// $request->setControllerName($setup['controller']);
 
-		$response = $this->componentManager->getComponent('F3_FLOW3_MVC_Response');
-		$response = $controller->processRequest($request, $response);
+		$response = $this->componentManager->getComponent('F3_FLOW3_MVC_Web_Response');
+
+		$controller->processRequest($request, $response);
 			
 		return $response->getContent();
 	}
@@ -146,20 +154,25 @@ final class tx_gimmefive {
 		$this->initializeFLOW3();
 		$this->initializePackages();
 		$this->initializeComponents();
-		$this->initializeSettings();
-		// $this->initializeResources();
+		$this->initializeResources();
 	}
-		
+
 	/**
 	 * Initializes the class loader
 	 *
 	 * @return void
-	 * @author Robert Lemke <robert@typo3.org>
+	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @author Jochen Rau <jochen.rau@typoplanet.de>
+	 * @throws F3_FLOW3_Exception if the class loader has already been initialized.
+	 * @see initialize()
 	 */
 	public function initializeClassLoader() {
 		if ($this->initializationLevel >= self::INITIALIZATION_LEVEL_CLASSLOADER) throw new F3_FLOW3_Exception('FLOW3 has already been initialized (up to level ' . $this->initializationLevel . ').', 1210150008);
+		
+		require_once(realpath(dirname(__FILE__) . '/../../../') . '/ext/flow3/Classes/Resource/F3_FLOW3_Resource_ClassLoader.php');
+		$this->classLoader = new F3_FLOW3_Resource_ClassLoader(FLOW3_PATH_PACKAGES);
 		spl_autoload_register(array($this, 'loadClass'));
+
 		$this->initializationLevel = self::INITIALIZATION_LEVEL_CLASSLOADER;
 	}
 	
@@ -180,6 +193,7 @@ final class tx_gimmefive {
 		$configurationManager = new F3_FLOW3_Configuration_Manager($this->context);
 		$this->configuration = $configurationManager->getConfiguration('FLOW3', F3_FLOW3_Configuration_Manager::CONFIGURATION_TYPE_FLOW3);
 
+		// TODO Activate or substitute the error handler
 		// $errorHandler = new F3_FLOW3_Error_ErrorHandler();
 		// $errorHandler->setExceptionalErrors($this->configuration->errorHandler->exceptionalErrors);
 		// new $this->configuration->exceptionHandler->className;
@@ -188,13 +202,13 @@ final class tx_gimmefive {
 		$this->componentManager->setContext($this->context);
 		$this->componentManager->registerComponent('F3_FLOW3_Configuration_Manager', 'F3_FLOW3_Configuration_Manager', $configurationManager);
 		$this->componentManager->registerComponent('F3_FLOW3_Utility_Environment');
-		// $this->componentManager->registerComponent('F3_FLOW3_AOP_Framework', 'F3_FLOW3_AOP_Framework');
+		$this->componentManager->registerComponent('F3_FLOW3_AOP_Framework', 'F3_FLOW3_AOP_Framework');
 		$this->componentManager->registerComponent('F3_FLOW3_Package_ManagerInterface', 'F3_FLOW3_Package_Manager');
 		$this->componentManager->registerComponent('F3_FLOW3_Cache_Backend_File');
-		// $this->componentManager->registerComponent('F3_FLOW3_Cache_VariableCache');
+		$this->componentManager->registerComponent('F3_FLOW3_Cache_VariableCache');
 
-		// $resourceManager = new F3_FLOW3_Resource_Manager($this->classLoader, $this->componentManager);
-		// $this->componentManager->registerComponent('F3_FLOW3_Resource_Manager', 'F3_FLOW3_Resource_Manager', $resourceManager);
+		$resourceManager = new F3_FLOW3_Resource_Manager($this->classLoader, $this->componentManager);
+		$this->componentManager->registerComponent('F3_FLOW3_Resource_Manager', 'F3_FLOW3_Resource_Manager', $resourceManager);
 
 		$this->initializationLevel = self::INITIALIZATION_LEVEL_FLOW3;
 	}
@@ -212,6 +226,7 @@ final class tx_gimmefive {
 
 		$packageManager = $this->componentManager->getComponent('F3_FLOW3_Package_ManagerInterface');
 		$configurationManager = $this->componentManager->getComponent('F3_FLOW3_Configuration_Manager');
+
 		$packageManager->initialize();
 		$activePackages = $packageManager->getActivePackages();
 		foreach ($activePackages as $packageKey => $package) {
@@ -232,47 +247,38 @@ final class tx_gimmefive {
 	public function initializeComponents() {
 		if ($this->initializationLevel >= self::INITIALIZATION_LEVEL_COMPONENTS) throw new F3_FLOW3_Exception('FLOW3 has already been initialized up to level ' . $this->initializationLevel . '.', 1205760769);
 
-		// $configurationHasBeenLoaded = FALSE;
+		$configurationHasBeenLoaded = FALSE;
 
-		// if ($this->configuration->component->configurationCache->enable) {
-		// 	$cacheBackend = $this->componentManager->getComponent($this->configuration->component->configurationCache->backend, $this->context);
-		// 	$componentConfigurationsCache = $this->componentManager->getComponent('F3_FLOW3_Cache_VariableCache', 'FLOW3_Component_Configurations', $cacheBackend);
-		// 	if ($componentConfigurationsCache->has('baseComponentConfigurations')) {
-		// 		$componentConfigurations = $componentConfigurationsCache->load('baseComponentConfigurations');
-		// 		$configurationHasBeenLoaded = TRUE;
-		// 	}
-		// }
-		// if (!$configurationHasBeenLoaded) {
-			$packageManager = $this->componentManager->getComponent('F3_FLOW3_Package_ManagerInterface');			
+		if ($this->configuration->component->configurationCache->enable) {
+			$cacheBackend = $this->componentManager->getComponent($this->configuration->component->configurationCache->backend, $this->context);
+			$componentConfigurationsCache = $this->componentManager->getComponent('F3_FLOW3_Cache_VariableCache', 'FLOW3_Component_Configurations', $cacheBackend);
+			if ($componentConfigurationsCache->has('baseComponentConfigurations')) {
+				$componentConfigurations = $componentConfigurationsCache->load('baseComponentConfigurations');
+				$configurationHasBeenLoaded = TRUE;
+			}
+		}
+		if (!$configurationHasBeenLoaded) {
+			$packageManager = $this->componentManager->getComponent('F3_FLOW3_Package_ManagerInterface');
 			$this->registerAndConfigureAllPackageComponents($packageManager->getActivePackages());
-			// $componentConfigurations = $this->componentManager->getComponentConfigurations();
-			// if ($this->configuration->component->configurationCache->enable) {
-			// 	$componentConfigurationsCache->save('baseComponentConfigurations', $componentConfigurations);
-			// }
-		// }
+			$componentConfigurations = $this->componentManager->getComponentConfigurations();
+			if ($this->configuration->component->configurationCache->enable) {
+				$componentConfigurationsCache->save('baseComponentConfigurations', $componentConfigurations);
+			}
+		}
 
-		// $AOPFramework = $this->componentManager->getComponent('F3_FLOW3_AOP_Framework');
-		// $AOPFramework->initialize($componentConfigurations);
-		// foreach ($AOPFramework->getTargetAndProxyClassnames() as $targetClassName => $proxyClassName) {
-		// 	$componentConfigurations[$targetClassName]->setClassName($proxyClassName);
-		// }
+		$AOPFramework = $this->componentManager->getComponent('F3_FLOW3_AOP_Framework');
+		$AOPFramework->initialize($componentConfigurations);
+		foreach ($AOPFramework->getTargetAndProxyClassnames() as $targetClassName => $proxyClassName) {
+			$componentConfigurations[$targetClassName]->setClassName($proxyClassName);
+		}
 
-		// $this->componentManager->setComponentConfigurations($componentConfigurations);
-		// debug($this->componentManager->getRegisteredComponents());
+		$this->componentManager->setComponentConfigurations($componentConfigurations);
+
+		// $persistenceManager = $this->componentManager->getComponent('F3_FLOW3_Persistence_Manager');
+		// $persistenceManager->initialize();
+
+
 		$this->initializationLevel = self::INITIALIZATION_LEVEL_COMPONENTS;
-	}
-
-	/**
-	 * Loads and initializes the settings
-	 *
-	 * @return void
-	 * @author Robert Lemke <robert@typo3.org>
-	 * @throws F3_FLOW3_Exception if the settings have already been initialized.
-	 * @see initialize()
-	 */
-	public function initializeSettings() {
-		if ($this->initializationLevel >= self::INITIALIZATION_LEVEL_SETTINGS) throw new F3_FLOW3_Exception('FLOW3 has already been initialized up to level ' . $this->initializationLevel . '.', 1205760770);
-		$this->initializationLevel = self::INITIALIZATION_LEVEL_SETTINGS;
 	}
 
 	/**
@@ -313,7 +319,7 @@ final class tx_gimmefive {
 	 */
 	public function run() {
 		if ($this->initializationLevel == self::INITIALIZATION_LEVEL_CONSTRUCT) $this->initialize();
-		if ($this->initializationLevel < self::INITIALIZATION_LEVEL_SETTINGS) throw new F3_FLOW3_Exception('Cannot run FLOW3 because it is not fully initialized (current initialization level: ' . $this->initializationLevel . ').', 1205759259);
+		if ($this->initializationLevel < self::INITIALIZATION_LEVEL_RESOURCES) throw new F3_FLOW3_Exception('Cannot run FLOW3 because it is not fully initialized (current initialization level: ' . $this->initializationLevel . ').', 1205759259);
 
 		$requestHandlerResolver = $this->componentManager->getComponent('F3_FLOW3_MVC_RequestHandlerResolver');
 		$requestHandler = $requestHandlerResolver->resolveRequestHandler();
@@ -369,7 +375,7 @@ final class tx_gimmefive {
 	 * components at the component manager. Finally the component configuration
 	 * defined by the package is loaded and applied to the registered components.
 	 *
-	 * @param array $packages: The packages whose classes should be registered
+	 * @param array $packages The packages whose classes should be registered
 	 * @return void
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
@@ -425,12 +431,13 @@ final class tx_gimmefive {
 			}
 		}
 		$this->componentManager->setComponentConfigurations($masterComponentConfigurations);
+		
 	}
 
 	/**
 	 * Checks if the given class name appears on in the component blacklist.
 	 *
-	 * @param string $className: The class name to check. May be a regular expression.
+	 * @param string $className The class name to check. May be a regular expression.
 	 * @return boolean TRUE if the class has been blacklisted, otherwise FALSE
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
@@ -480,19 +487,14 @@ final class tx_gimmefive {
 	 *
 	 * @param   string $className: Name of the class/interface to load
 	 * @return  void
-	 * @author  Robert Lemke <robert@typo3.org>
 	 * @author Jochen Rau <jochen.rau@typoplanet.de>
 	 */
 	private function loadClass($className) {
-		if (isset($this->specialClassNamesAndPaths[$className])) {
-			$classFilePathAndName = $this->specialClassNamesAndPaths[$className];
-		} else {
-			$classNameParts = explode('_', $className);
-			if (is_array($classNameParts) && $classNameParts[0] == 'F3') {
-				$classFilePathAndName = FLOW3_PATH_PACKAGES . $classNameParts[1] . '/' . F3_FLOW3_Package_Package::DIRECTORY_CLASSES;
-				$classFilePathAndName .= implode(array_slice($classNameParts, 2, -1), '/') . '/';
-				$classFilePathAndName .= $className . '.php';
-			}
+		$classNameParts = explode('_', $className);
+		if (is_array($classNameParts) && $classNameParts[0] == 'F3') {
+			$classFilePathAndName = FLOW3_PATH_PACKAGES . $classNameParts[1] . '/' . F3_FLOW3_Package_Package::DIRECTORY_CLASSES;
+			$classFilePathAndName .= implode(array_slice($classNameParts, 2, -1), '/') . '/';
+			$classFilePathAndName .= $className . '.php';
 		}
 		if (isset($classFilePathAndName) && file_exists($classFilePathAndName)) require_once ($classFilePathAndName);
 	}	

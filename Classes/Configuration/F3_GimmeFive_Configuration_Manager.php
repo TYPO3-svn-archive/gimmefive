@@ -37,6 +37,7 @@ class F3_GimmeFive_Configuration_Manager extends F3_FLOW3_Configuration_Manager{
 	 * @return F3_GimmeFive_Configuration_Container The configuration
 	 * @throws Exception on invalid configuration types
 	 * @author Robert Lemke <robert@typo3.org>
+	 * @author Jochen Rau <jochen.rau@typoplanet.de>
 	 */
 	public function getConfiguration($packageKey, $configurationType, $setup = NULL) {
 		switch ($configurationType) {
@@ -62,8 +63,8 @@ class F3_GimmeFive_Configuration_Manager extends F3_FLOW3_Configuration_Manager{
 			$additionalConfiguration = F3_GimmeFive_Configuration_Source_PHP::load(FLOW3_PATH_CONFIGURATION . $this->context . '/' . $configurationType . '.php');
 			$configuration->mergeWith($additionalConfiguration);
 		}
-		
-		$configuration->mergeWithTS($GLOBALS['TSFE']->tmpl->setup['plugin.']['F3_' . $packageKey . '.']['Settings.']);
+
+		$configuration->mergeWithTS($GLOBALS['TSFE']->tmpl->setup['plugin.']['F3_' . $packageKey . '.'][$configurationType . '.']);
 		$configuration->mergeWithTS($setup);
 		
 		return $configuration;
