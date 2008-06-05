@@ -13,13 +13,13 @@
  *                                                                        */
 
 /**
- * An abstract view
+ * An abstract template based view view
  *
  * @author	Jochen Rau <j.rau@web.de>
  * @package	F3_GimmeFive
  * @subpackage	MVC
  */
-abstract class F3_GimmeFive_MVC_View_AbstractView extends tslib_pibase {	
+abstract class F3_GimmeFive_MVC_View_Template extends tslib_pibase {	
 
 	public $cObj;
 	public $piVars;
@@ -33,8 +33,19 @@ abstract class F3_GimmeFive_MVC_View_AbstractView extends tslib_pibase {
 	 * @var F3_FLOW3_Package_ManagerInterface A reference to the Package Manager
 	 */
 
+	/**
+	 * @var F3_GimmeFive_Configuration_Container A reference to the Configuration Container 
+	 */
 	protected $settings;
+	
+	/**
+	 * @var ArrayObject The model to be displayed 
+	 */
 	protected $model;
+	
+	/**
+	 * @var F3_GimmeFive_Configuration_Container A reference to the Configuration Container 
+	 */
 	protected $subparts;
 	protected $typolinkConf;
 
@@ -63,13 +74,13 @@ abstract class F3_GimmeFive_MVC_View_AbstractView extends tslib_pibase {
 		$this->model = $model;
 	}
 	
-	public function setTemplate($templateFile, $templateName, $forceTemplate = FALSE) {
-		// if ($this->settings->offsetGet('templateFile') != '') $templateFile = $this->settings->offsetGet('templateFile');
-		// if (preg_match('/^fileadmin\//', $templateFile) && $forceTemplate === FALSE) {
-		// 	$templatePathAndFilename = PATH_site . $templateFile;
-		// } else {
+	public function setTemplateResource($templateFile, $templateName, $forceTemplate = FALSE) {
+		if ($this->settings->offsetGet('templateFile') != '' && $forceTemplate === FALSE) $templateFile = $this->settings->offsetGet('templateFile');
+		if (preg_match('/^\/?fileadmin\//', $templateFile)) {
+			$templatePathAndFilename = PATH_site . $templateFile;
+		} else {
 			$templatePathAndFilename = $this->packageManager->getPackagePath($this->extKey) . 'Resources/Template/' . $templateFile;
-		// }
+		}
 		
 		if (!isset($templatePathAndFilename) || !file_exists($templatePathAndFilename)) throw new Exception('Template file "' . $templatePathAndFilename . '"not found.');
 
