@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>database</type>
+		<description>Language labels for database tables/fields for the PhoneBookTutorial</description>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="F3_PhoneBookTutorial_PhoneBooks">Phone Books</label>
+			<label index="F3_PhoneBookTutorial_PhoneBooks.title">Name of the Phone Book</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries">Phone Book Entries</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries.firstName">firstName</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries.lastName">lastName</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries.phoneNumber">Phone number</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries.phoneBookUid">Assigned Phone Book</label>
+		</languageKey>
+		<languageKey index="de" type="array">
+			<label index="F3_PhoneBookTutorial_PhoneBooks">Telefonbücher</label>
+			<label index="F3_PhoneBookTutorial_PhoneBooks.title">Bezeichnung des Bereichs</label>
+			<label index="F3_PhoneBookTutorial_PhoneBooks.comment">Standardtext für den Perioden-Kommentar</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries">Telefonbucheinträge</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries.firstName">Vorname</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries.lastName">Nachname</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries.phoneNumber">Telefonnummer</label>
+			<label index="F3_PhoneBookTutorial_PhoneBookEntries.phoneBookUid">Zugeordnetes Telefonbuch</label>
+		</languageKey>
+	</data>
+</T3locallang>

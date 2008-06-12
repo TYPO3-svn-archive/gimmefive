@@ -79,7 +79,7 @@ abstract class F3_GimmeFive_MVC_View_Template extends tslib_pibase {
 		if (preg_match('/^\/?fileadmin\//', $templateFile)) {
 			$templatePathAndFilename = PATH_site . $templateFile;
 		} else {
-			$templatePathAndFilename = $this->packageManager->getPackagePath($this->extKey) . 'Resources/Template/' . $templateFile;
+			$templatePathAndFilename = $this->packageManager->getPackagePath($this->extKey) . 'Resources/Templates/' . $templateFile;
 		}
 		
 		if (!isset($templatePathAndFilename) || !file_exists($templatePathAndFilename)) throw new Exception('Template file "' . $templatePathAndFilename . '"not found.');

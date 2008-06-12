@@ -104,15 +104,9 @@ final class tx_gimmefive {
 
 	public function main($input, $setup) {
 		// return 'Hello World!' . $input;
-		if (isset($setup['context'])) $this->context = $setup['context'];
-		
+		if (isset($setup['context'])) $this->context = $setup['context'];	
 		if ($this->initializationLevel == self::INITIALIZATION_LEVEL_CONSTRUCT) $this->initialize();
 		if ($this->initializationLevel < self::INITIALIZATION_LEVEL_RESOURCES) throw new F3_FLOW3_Exception('Cannot run FLOW3 because it is not fully initialized (current initialization level: ' . $this->initializationLevel . ').', 1205759259);
-
-
-		if (!isset($setup['controller'])) throw new F3_FLOW3_Exception('No controller given. Please configure one.', 1211788758);
-		if (!$this->componentManager->isComponentRegistered($setup['controller'])) throw new Exception('Invalid controller "' . $setup['controller'] . '". The controller "' . $setup['controller'] . '" is not a registered component.', 1202921618);
-		$controller = $this->componentManager->getComponent($setup['controller']);		
 
 		$content = $input;
 		// TODO
@@ -124,13 +118,18 @@ final class tx_gimmefive {
 		$configurationManager = new F3_GimmeFive_Configuration_Manager($this->context);
 		$settings = $configurationManager->getConfiguration($packageKey, 'Settings', $setup); 
 		
-		$request = $this->componentManager->getComponent('F3_FLOW3_MVC_Web_Request');
+		$request = $this->componentManager->getComponent('F3_FLOW3_MVC_Web_RequestBuilder')->build();
 		$request->setArgument('content', $content);
 		$request->setArgument('settings', $settings);
-		// $request->setControllerName($setup['controller']);
+		$request->setControllerName($setup['controller']);
+		$request->lock();
 
 		$response = $this->componentManager->getComponent('F3_FLOW3_MVC_Web_Response');
 
+		// dispatch
+		$controllerName = $request->getControllerName();
+		if (!$this->componentManager->isComponentRegistered($controllerName)) throw new F3_FLOW3_MVC_Exception_NoSuchController('Invalid controller "' . $controllerName . '". The controller "' . $controllerName . '" is not a registered component.', 1202921618);
+		$controller = $this->componentManager->getComponent($controllerName);
 		$controller->processRequest($request, $response);
 			
 		return $response->getContent();
@@ -274,8 +273,8 @@ final class tx_gimmefive {
 
 		$this->componentManager->setComponentConfigurations($componentConfigurations);
 
-		// $persistenceManager = $this->componentManager->getComponent('F3_FLOW3_Persistence_Manager');
-		// $persistenceManager->initialize();
+		$persistenceManager = $this->componentManager->getComponent('F3_FLOW3_Persistence_Manager');
+		$persistenceManager->initialize();
 
 
 		$this->initializationLevel = self::INITIALIZATION_LEVEL_COMPONENTS;
