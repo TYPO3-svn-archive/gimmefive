@@ -18,6 +18,7 @@ require_once(realpath(dirname(__FILE__) . '/../../../') . '/ext/flow3/Classes/Ut
 define('FLOW3_PATH_FLOW3', F3_FLOW3_Utility_Files::getUnixStylePath(realpath(dirname(__FILE__) . '/../../../') . '/ext/flow3/Classes/'));
 define('FLOW3_PATH_PACKAGES', F3_FLOW3_Utility_Files::getUnixStylePath(realpath(dirname(__FILE__) . '/../../../') . '/ext/'));
 define('FLOW3_PATH_CONFIGURATION', F3_FLOW3_Utility_Files::getUnixStylePath(realpath(FLOW3_PATH_FLOW3 . '../../../Configuration/') . '/'));
+define('FLOW3_PATH_PUBLIC', str_replace('\\', '/', realpath(dirname(__FILE__) . '/../../../../')) . '/');
 require_once(FLOW3_PATH_FLOW3 . 'Package/F3_FLOW3_Package_PackageInterface.php');
 require_once(FLOW3_PATH_FLOW3 . 'Package/F3_FLOW3_Package_Package.php');
 
@@ -96,7 +97,7 @@ final class tx_gimmefive {
 	 * @return void
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
-	public function __construct($context = 'Production') {
+	public function __construct($context = 'Development') {
 		$this->checkEnvironment();
 		$this->context = $context;
 		$this->initializationLevel = self::INITIALIZATION_LEVEL_CONSTRUCT;
@@ -285,8 +286,8 @@ final class tx_gimmefive {
 	 * Publishes the public resources of all found packages
 	 *
 	 * @return void
-	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @throws F3_FLOW3_Exception if the resource system has already been initialized.
+	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @see initialize()
 	 */
 	public function initializeResources() {
@@ -294,7 +295,7 @@ final class tx_gimmefive {
 
 		$packageManager = $this->componentManager->getComponent('F3_FLOW3_Package_ManagerInterface');
 
-		$cacheBackend = $this->componentManager->getComponent('F3_FLOW3_Cache_Backend_File', $this->context);
+		$cacheBackend = $this->componentManager->getComponent($this->configuration->resource->cache->backend, $this->context, $this->configuration->resource->cache->backendOptions);
 		$metadataCache = $this->componentManager->getComponent('F3_FLOW3_Cache_VariableCache', 'FLOW3_Resource_Manager', $cacheBackend);
 
 		$resourcePublisher = $this->componentManager->getComponent('F3_FLOW3_Resource_Publisher');
