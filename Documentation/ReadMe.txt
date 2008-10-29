@@ -1,1 +1,0 @@
-For more Information, visit http://forge.typo3.org/wiki/extension-gimmefive/Manual.
