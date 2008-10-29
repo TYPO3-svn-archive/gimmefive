@@ -1,0 +1,6 @@
+includeLibs.tx_gimmefive = EXT:gimmefive/Classes/tx_gimmefive.php
+
+# The PhoneBook-Plugin
+tt_content.list.20.PhoneBookTutorial = USER
+tt_content.list.20.PhoneBookTutorial.userFunc = tx_gimmefive->main
+tt_content.list.20.PhoneBookTutorial.controller = F3_PhoneBookTutorial_Controller_Default

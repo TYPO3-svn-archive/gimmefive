@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<packageInfo>
+	<packageKey>PhoneBookTutorial</packageKey>
+	<version>0.0.0</version>
+	<title>Phone Book sample application</title>
+	<description>This is a sample application to demonstrate the Model-View-Controller features of the FLOW3 Framework.</description>
+</packageInfo>	
